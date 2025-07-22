@@ -1,35 +1,39 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const BookingPage = () => {
   const [services] = useState([
-    { name: 'Physiotherapy', price: 500, duration: 30 },
-    { name: 'Consultation', price: 300, duration: 15 },
-    { name: 'Rehabilitation Session', price: 800, duration: 60 },
+    { name: "Physiotherapy", price: 500, duration: 30 },
+    { name: "Consultation", price: 300, duration: 15 },
+    { name: "Rehabilitation Session", price: 800, duration: 60 },
   ]);
 
   const [selectedService, setSelectedService] = useState(services[0]);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState("");
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState('');
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchSlots = async () => {
       if (!selectedDate || !selectedService) return;
       setIsLoadingSlots(true);
       try {
-        const res = await axios.post('/api/calendar/availability', {
-          date: selectedDate,
-          duration: selectedService.duration,
-        });
-        setAvailableSlots(res.data.slots);
+        const res = await axios.post(
+          process.env.NEXT_PUBLIC_API_URL
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/calendar/availability`
+            : "/api/calendar/availability",
+          {
+            date: selectedDate,
+            duration: selectedService.duration,
+          }
+        );
       } catch (err) {
         setAvailableSlots([]);
       }
@@ -41,15 +45,15 @@ const BookingPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSlot) {
-      setMessage('Please select a time slot.');
+      setMessage("Please select a time slot.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('https://formspree.io/f/movljpbv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("https://formspree.io/f/movljpbv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           service: selectedService.name,
           price: selectedService.price,
@@ -60,15 +64,15 @@ const BookingPage = () => {
       });
 
       if (res.ok) {
-        setMessage('Booking successful!');
-        setFormData({ name: '', email: '', phone: '' });
-        setSelectedDate('');
-        setSelectedSlot('');
+        setMessage("Booking successful!");
+        setFormData({ name: "", email: "", phone: "" });
+        setSelectedDate("");
+        setSelectedSlot("");
       } else {
-        setMessage('Submission failed. Please try again.');
+        setMessage("Submission failed. Please try again.");
       }
     } catch (err) {
-      setMessage('Error submitting the form.');
+      setMessage("Error submitting the form.");
     }
     setIsSubmitting(false);
   };
@@ -76,7 +80,9 @@ const BookingPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center text-black bg-gray-100 px-4">
       <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-xl">
-        <h1 className="text-2xl font-semibold mb-6 text-center">Book an Appointment</h1>
+        <h1 className="text-2xl font-semibold mb-6 text-center">
+          Book an Appointment
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Service Selection */}
@@ -113,7 +119,9 @@ const BookingPage = () => {
 
           {/* Time Slots */}
           <div>
-            <label className="block font-medium mb-1">Available Time Slots</label>
+            <label className="block font-medium mb-1">
+              Available Time Slots
+            </label>
             {isLoadingSlots ? (
               <p className="text-sm text-gray-500">Loading...</p>
             ) : availableSlots.length === 0 ? (
@@ -127,8 +135,8 @@ const BookingPage = () => {
                     onClick={() => setSelectedSlot(slot)}
                     className={`border rounded px-2 py-1 text-sm ${
                       selectedSlot === slot
-                        ? 'bg-blue-600 text-white'
-                        : 'hover:bg-blue-100'
+                        ? "bg-blue-600 text-white"
+                        : "hover:bg-blue-100"
                     }`}
                   >
                     {slot}
@@ -145,7 +153,9 @@ const BookingPage = () => {
               type="text"
               className="w-full border rounded px-3 py-2"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               required
             />
           </div>
@@ -157,7 +167,9 @@ const BookingPage = () => {
               type="email"
               className="w-full border rounded px-3 py-2"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               required
             />
           </div>
@@ -169,7 +181,9 @@ const BookingPage = () => {
               type="tel"
               className="w-full border rounded px-3 py-2"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
               required
             />
           </div>
@@ -180,10 +194,12 @@ const BookingPage = () => {
             disabled={isSubmitting}
             className="w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700"
           >
-            {isSubmitting ? 'Booking...' : 'Book Appointment'}
+            {isSubmitting ? "Booking..." : "Book Appointment"}
           </button>
 
-          {message && <p className="text-center mt-2 text-sm text-blue-600">{message}</p>}
+          {message && (
+            <p className="text-center mt-2 text-sm text-blue-600">{message}</p>
+          )}
         </form>
       </div>
     </div>

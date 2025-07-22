@@ -1,67 +1,55 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
-import { calendar_v3 } from 'googleapis';
-
-const calendar = google.calendar({ version: 'v3' });
+import path from 'path';
+import { promises as fs } from 'fs';
 
 export async function POST(req: Request) {
+  const { date, duration } = await req.json();
+
+  const startOfDay = new Date(`${date}T00:00:00.000Z`);
+  const endOfDay = new Date(`${date}T23:59:59.999Z`);
+
+  // ✅ Load credentials based on environment
+  let credentials;
+  if (process.env.NODE_ENV === 'production') {
+    credentials = {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL!,
+      private_key: process.env.GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+    };
+  } else {
+    const keyPath = path.join(process.cwd(), 'app/api/calendar/availability/google-service-account.json');
+    credentials = JSON.parse(await fs.readFile(keyPath, 'utf8'));
+  }
+
+  // ✅ Authenticate
+  const jwtClient = new google.auth.JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
+    scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+  });
+
+  const calendar = google.calendar({ version: 'v3', auth: jwtClient });
+
+  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+
   try {
-    const body = await req.json();
-    const { date, duration } = body;
-
-    const calendarId = process.env.GOOGLE_CALENDAR_ID!;
-    const apiKey = process.env.GOOGLE_API_KEY!;
-
-    const startOfDay = new Date(`${date}T00:00:00Z`);
-    const endOfDay = new Date(`${date}T23:59:59Z`);
-
-    const eventsRes = await calendar.events.list({
-      calendarId,
+    const response = await calendar.events.list({
+      calendarId: calendarId!,
       timeMin: startOfDay.toISOString(),
       timeMax: endOfDay.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
-      auth: apiKey,
     });
 
-    const events = eventsRes.data.items || [];
-
-    const busyTimes: { start: Date; end: Date }[] = events.map((event: calendar_v3.Schema$Event) => ({
-      start: new Date(event.start?.dateTime || ''),
-      end: new Date(event.end?.dateTime || ''),
+    const bookedEvents = (response.data.items || []).map((event) => ({
+      start: event.start?.dateTime,
+      end: event.end?.dateTime,
     }));
 
-    const slots: string[] = [];
-    const startHour = 9;
-    const endHour = 17;
-    const interval = 15; // minutes
-
-    const day = new Date(date);
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let min = 0; min < 60; min += interval) {
-        const start = new Date(day);
-        start.setHours(hour, min, 0, 0);
-        const end = new Date(start.getTime() + duration * 60000);
-
-        const isConflicting = busyTimes.some((busy) =>
-          start < busy.end && end > busy.start
-        );
-
-        if (!isConflicting) {
-          slots.push(
-            start.toLocaleTimeString('en-GB', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-            })
-          );
-        }
-      }
-    }
-
-    return NextResponse.json({ slots });
-  } catch (err) {
-    console.error('Calendar API error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ bookedEvents });
+  } catch (error) {
+    console.error('Google Calendar API error:', error);
+    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
   }
 }

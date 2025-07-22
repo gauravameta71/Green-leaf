@@ -35,7 +35,7 @@
     "**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts"
-, "app/green-leaf-booking/page.jsx"  ],
+, "app/green-leaf-booking/page.jsx", "next.config.mjs"  ],
   "exclude": [
     "node_modules"
   ]
