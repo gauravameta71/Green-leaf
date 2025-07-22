@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 app/api/calendar/availability/google-service-account.json
+
+.env.local
+google-service-account.jsonapp/api/calendar/availability/google-service-account.json

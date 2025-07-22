@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       client_email: process.env.GOOGLE_CLIENT_EMAIL!,
       private_key: process.env.GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
     };
+  
   } else {
     const keyPath = path.join(process.cwd(), 'app/api/calendar/availability/google-service-account.json');
     credentials = JSON.parse(await fs.readFile(keyPath, 'utf8'));
